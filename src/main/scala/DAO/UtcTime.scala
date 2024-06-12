@@ -1,6 +1,9 @@
-package DAO
+package com.naumann.DAO
 
-case class UtcTime(currentTime: String, adjustedTime: Option[String]) {
+import upickle.default.{ReadWriter => RW, macroRW}
 
+case class UtcTime(currentTime: String)
+
+object UtcTime{
+  implicit val rm: RW[UtcTime] = macroRW
 }
-
