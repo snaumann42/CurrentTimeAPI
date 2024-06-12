@@ -5,6 +5,8 @@ import io.undertow.Undertow
 import upickle.default._
 import utest._
 
+import java.time.{ZoneId, ZonedDateTime}
+import java.time.temporal.ChronoUnit
 import scala.util.matching.Regex
 
 
@@ -36,6 +38,36 @@ object ApiTests extends TestSuite{
       val utcTime2 = read[UtcTime](success2.text())
       assert(dateTimeFormat.matches(utcTime2.currentTime))
       success2.statusCode ==> 200
+
+      // With optional query parameter short IDs
+//      val success3 = requests.get(s"$host/time?timeZone=MST")
+//      val utcTime3 = read[UtcTime](success3.text())
+//      assert(dateTimeFormat.matches(utcTime3.currentTime))
+//      success3.statusCode ==> 200
+
+      // With optional query parameter long IDs
+      val success4 = requests.get(s"$host/time?timeZone=Australia/Sydney")
+      val utcTime4 = read[UtcTime](success4.text())
+      assert(dateTimeFormat.matches(utcTime4.currentTime))
+      success4.statusCode ==> 200
+    }
+
+    test("get /time is current") - withServer(CurrentTimeAPI) { host =>
+      val dateTimeFormat: Regex = """^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)$""".r
+
+      // Verify time is within seconds of each other
+      val success = requests.get(s"$host/time")
+      val returnedTime = ZonedDateTime.parse(read[UtcTime](success.text()).currentTime)
+      val currentTime = ZonedDateTime.now(
+                            ZoneId.systemDefault()
+                          ).truncatedTo(ChronoUnit.SECONDS)
+
+      // returned time should be earlier then currentTime plus 10 seconds
+      assert(currentTime.plusSeconds(10).isAfter(returnedTime))
+
+      // returned time should be later then currentTime minus 10 seconds
+      assert(currentTime.minusSeconds(10).isBefore(returnedTime))
+      success.statusCode ==> 200
     }
 
     test("incorrect calls get error codes") - withServer(CurrentTimeAPI) { host =>

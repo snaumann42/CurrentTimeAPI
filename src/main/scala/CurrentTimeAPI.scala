@@ -20,13 +20,21 @@ object CurrentTimeAPI extends cask.MainRoutes{
     ).truncatedTo(ChronoUnit.SECONDS)
 
     // Update datetime with optional timezone parameter
-    val updatedDatetime: ZonedDateTime = timeZone match {
-      case Some(timeZone) => currentTime.withZoneSameInstant(ZoneId.of(timeZone))
-      case None => currentTime
+    val updatedDatetime: Either[Throwable, ZonedDateTime] = timeZone match {
+      case Some(timeZone) =>
+        try{
+          Right(currentTime.withZoneSameInstant(ZoneId.of(timeZone)))
+        }catch {
+          case ex: Throwable => Left(ex)
+        }
+      case None => Right(currentTime)
     }
 
-    // alternate return
-    cask.Response(write(UtcTime(updatedDatetime.format(dateFormatter))), 200)
+    updatedDatetime match {
+      case Right(time) => cask.Response(write(UtcTime(time.format(dateFormatter))), 200)
+      case Left(ex) => cask.Response(ex.toString, 422)
+    }
+
   }
 
   initialize()
