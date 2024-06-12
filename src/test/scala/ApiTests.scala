@@ -53,8 +53,6 @@ object ApiTests extends TestSuite{
     }
 
     test("get /time is current") - withServer(CurrentTimeAPI) { host =>
-      val dateTimeFormat: Regex = """^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)$""".r
-
       // Verify time is within seconds of each other
       val success = requests.get(s"$host/time")
       val returnedTime = ZonedDateTime.parse(read[UtcTime](success.text()).currentTime)
