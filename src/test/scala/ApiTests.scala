@@ -33,19 +33,19 @@ object ApiTests extends TestSuite{
       assert(dateTimeFormat.matches(utcTime.currentTime))
       success.statusCode ==> 200
 
-      // With optional query parameter
+      // With optional query parameter (ZoneOffset support)
       val success2 = requests.get(s"$host/time?timeZone=-05:00")
       val utcTime2 = read[UtcTime](success2.text())
       assert(dateTimeFormat.matches(utcTime2.currentTime))
       success2.statusCode ==> 200
 
-      // With optional query parameter short IDs
-//      val success3 = requests.get(s"$host/time?timeZone=MST")
-//      val utcTime3 = read[UtcTime](success3.text())
-//      assert(dateTimeFormat.matches(utcTime3.currentTime))
-//      success3.statusCode ==> 200
+      // With optional query parameter (offset-style IDs)
+      val success3 = requests.get(s"$host/time?timeZone=GMT+2")
+      val utcTime3 = read[UtcTime](success3.text())
+      assert(dateTimeFormat.matches(utcTime3.currentTime))
+      success3.statusCode ==> 200
 
-      // With optional query parameter long IDs
+      // With optional query parameter (Region-based IDs)
       val success4 = requests.get(s"$host/time?timeZone=Australia/Sydney")
       val utcTime4 = read[UtcTime](success4.text())
       assert(dateTimeFormat.matches(utcTime4.currentTime))
