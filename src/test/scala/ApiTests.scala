@@ -40,7 +40,7 @@ object ApiTests extends TestSuite{
       success2.statusCode ==> 200
 
       // With optional query parameter (offset-style IDs)
-      val success3 = requests.get(s"$host/time?timeZone=GMT+2")
+      val success3 = requests.get(s"""$host/time?timeZone=GMT%2B02""")
       val utcTime3 = read[UtcTime](success3.text())
       assert(dateTimeFormat.matches(utcTime3.currentTime))
       success3.statusCode ==> 200
