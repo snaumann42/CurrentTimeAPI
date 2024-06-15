@@ -33,7 +33,7 @@ object ApiTests extends TestSuite{
       success.statusCode ==> 200
 
       // With optional query parameter (ZoneOffset support)
-      val success2 = requests.get(s"$host/time?timeZone=-05:00")
+      val success2 = requests.get(s"$host/time?timeZone=-03:00")
       val utcTime2 = read[UtcTime](success2.text())
       assert(dateTimeFormat.matches(utcTime2.currentTime))
       success2.statusCode ==> 200
@@ -76,6 +76,14 @@ object ApiTests extends TestSuite{
 
       //invalid time zone
       requests.get(s"$host/time?timeZone=WrongTimeZone", check = false).statusCode ==> 422
+    }
+
+    test("currentTime and adjusted time are not equal (when ignoring timezone)") - withServer(CurrentTimeAPI) { host =>
+      // With optional query parameter (Region-based IDs)
+      val success = requests.get(s"$host/time?timeZone=Australia/Sydney")
+      val utcTime = read[UtcTime](success.text())
+      success.statusCode ==> 200
+      assert(utcTime.currentTime.slice(0, 19) != utcTime.adjustedTime.getOrElse(utcTime.currentTime.slice(0, 19)).slice(0, 19))
     }
   }
 }
