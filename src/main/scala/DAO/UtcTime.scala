@@ -5,5 +5,6 @@ import upickle.default.{ReadWriter => RW, macroRW}
 case class UtcTime(currentTime: String, adjustedTime: Option[String] = None)
 
 object UtcTime{
-  implicit val rm: RW[UtcTime] = macroRW
+  implicit val rw: RW[UtcTime] = macroRW
 }
+

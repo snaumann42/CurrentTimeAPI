@@ -9,9 +9,6 @@ import java.time.temporal.ChronoUnit
 import java.time.{ZoneId, ZonedDateTime}
 import scala.util.matching.Regex
 
-//>>>>>  {"currentTime":"2024-06-12T22:42:09Z","adjustedTime":[]}
-//>>>>>  {"currentTime":"2024-06-12T22:42:09Z","adjustedTime":["2024-06-12T22:42:09Z"]}
-
 object ApiTests extends TestSuite{
   def withServer[T](example: cask.main.Main)(f: String => T): T = {
     val server = Undertow.builder
