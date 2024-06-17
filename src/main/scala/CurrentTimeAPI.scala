@@ -9,14 +9,14 @@ import java.time.{ZoneId, ZonedDateTime}
 
 
 object CurrentTimeAPI extends cask.MainRoutes{
-  val dateFormatter = DateTimeFormatter.ISO_INSTANT
+  val dateFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
   @cask.get("/time")
   def currentTime(timeZone: Option[String] = None) = {
 
     // Get the current datetime and timezone
     val currentTime = ZonedDateTime.now(
-      ZoneId.systemDefault()
+      ZoneId.of("UTC")
     ).truncatedTo(ChronoUnit.SECONDS)
 
     // Update datetime with optional timezone parameter
@@ -33,7 +33,7 @@ object CurrentTimeAPI extends cask.MainRoutes{
     updatedDatetime match {
       case Right(Some(adjustedTime)) => cask.Response(
         write[UtcTime](UtcTime(currentTime.format(dateFormatter),
-          Some(adjustedTime.toString))), 200)
+          Some(adjustedTime.format(dateFormatter)))), 200)
       case Right(None) => cask.Response(
         write[UtcTime](UtcTime(currentTime.format(dateFormatter))), 200)
       case Left(ex) => cask.Response(ex.toString, 422)
