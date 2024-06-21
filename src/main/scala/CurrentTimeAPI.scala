@@ -1,7 +1,8 @@
 package com.naumann
 
 import com.naumann.DAO.UtcTime
-import upickle.default._
+import io.circe.generic.auto._
+import io.circe.syntax._
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -32,10 +33,10 @@ object CurrentTimeAPI extends cask.MainRoutes{
 
     updatedDatetime match {
       case Right(Some(adjustedTime)) => cask.Response(
-        write[UtcTime](UtcTime(currentTime.format(dateFormatter),
-          Some(adjustedTime.format(dateFormatter)))), 200)
+        UtcTime(currentTime.format(dateFormatter),
+          Some(adjustedTime.format(dateFormatter))).asJson.toString(), 200)
       case Right(None) => cask.Response(
-        write[UtcTime](UtcTime(currentTime.format(dateFormatter))), 200)
+        UtcTime(currentTime.format(dateFormatter)).asJson.toString(), 200)
       case Left(ex) => cask.Response(ex.toString, 422)
     }
 

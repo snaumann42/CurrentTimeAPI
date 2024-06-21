@@ -1,8 +1,9 @@
 package com.naumann
 
 import com.naumann.DAO.UtcTime
+import io.circe.generic.auto._
+import io.circe.parser._
 import io.undertow.Undertow
-import upickle.default._
 import utest._
 
 import java.time.temporal.ChronoUnit
@@ -28,42 +29,61 @@ object ApiTests extends TestSuite{
 
       // Without optional query parameter
       val success = requests.get(s"$host/time")
-      val utcTime = read[UtcTime](success.text())
-      assert(dateTimeFormat.matches(utcTime.currentTime))
+      val utcTime = decode[UtcTime](success.text())
+      utcTime match{
+        case Right(time: UtcTime) => assert(dateTimeFormat.matches(time.currentTime))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
       success.statusCode ==> 200
 
       // With optional query parameter (ZoneOffset support)
       val success2 = requests.get(s"$host/time?timeZone=-03:00")
-      val utcTime2 = read[UtcTime](success2.text())
-      assert(dateTimeFormat.matches(utcTime2.currentTime))
+      val utcTime2 = decode[UtcTime](success2.text())
+      utcTime2 match{
+        case Right(time: UtcTime) => assert(dateTimeFormat.matches(time.currentTime))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
       success2.statusCode ==> 200
 
       // With optional query parameter (offset-style IDs)
       val success3 = requests.get(s"""$host/time?timeZone=GMT%2B02""")
-      val utcTime3 = read[UtcTime](success3.text())
-      assert(dateTimeFormat.matches(utcTime3.currentTime))
+      val utcTime3 = decode[UtcTime](success3.text())
+      utcTime3 match {
+        case Right(time: UtcTime) => assert(dateTimeFormat.matches(time.currentTime))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
       success3.statusCode ==> 200
 
       // With optional query parameter (Region-based IDs)
       val success4 = requests.get(s"$host/time?timeZone=Australia/Sydney")
-      val utcTime4 = read[UtcTime](success4.text())
-      assert(dateTimeFormat.matches(utcTime4.currentTime))
+      val utcTime4 = decode[UtcTime](success4.text())
+      utcTime4 match {
+        case Right(time: UtcTime) => assert(dateTimeFormat.matches(time.currentTime))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
       success4.statusCode ==> 200
     }
 
     test("get /time is current") - withServer(CurrentTimeAPI) { host =>
       // Verify time is within seconds of each other
       val success = requests.get(s"$host/time")
-      val returnedTime = ZonedDateTime.parse(read[UtcTime](success.text()).currentTime)
-      val currentTime = ZonedDateTime.now(
-                            ZoneId.systemDefault()
-                          ).truncatedTo(ChronoUnit.SECONDS)
+      val utcTime = decode[UtcTime](success.text())
 
-      // returned time should be earlier then currentTime plus 10 seconds
-      assert(currentTime.plusSeconds(10).isAfter(returnedTime))
+      utcTime match {
+        case Right(time: UtcTime) =>
+          val returnedTime = ZonedDateTime.parse(time.currentTime)
+          val currentTime = ZonedDateTime.now(
+            ZoneId.systemDefault()
+          ).truncatedTo(ChronoUnit.SECONDS)
 
-      // returned time should be later then currentTime minus 10 seconds
-      assert(currentTime.minusSeconds(10).isBefore(returnedTime))
+          // returned time should be earlier then currentTime plus 10 seconds
+          assert(currentTime.plusSeconds(5).isAfter(returnedTime))
+
+          // returned time should be later then currentTime minus 10 seconds
+          assert(currentTime.minusSeconds(5).isBefore(returnedTime))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
+
       success.statusCode ==> 200
     }
 
@@ -81,9 +101,15 @@ object ApiTests extends TestSuite{
     test("currentTime and adjusted time are not equal (when ignoring timezone)") - withServer(CurrentTimeAPI) { host =>
       // With optional query parameter (Region-based IDs)
       val success = requests.get(s"$host/time?timeZone=Australia/Sydney")
-      val utcTime = read[UtcTime](success.text())
+      val utcTime = decode[UtcTime](success.text())
+
+      utcTime match {
+        case Right(time: UtcTime) =>
+          assert(time.currentTime.slice(0, 19) != time.adjustedTime.getOrElse(time.currentTime).slice(0, 19))
+        case Left(exp) => assume(false, "Failed to parse utc time from JSON.\n" + exp.getMessage)
+      }
+
       success.statusCode ==> 200
-      assert(utcTime.currentTime.slice(0, 19) != utcTime.adjustedTime.getOrElse(utcTime.currentTime.slice(0, 19)).slice(0, 19))
     }
   }
 }
